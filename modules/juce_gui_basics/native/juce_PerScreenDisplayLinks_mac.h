@@ -26,6 +26,8 @@
 namespace juce
 {
 
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+
 //==============================================================================
 /*
     Forwards NSNotificationCenter callbacks to a std::function<void()>.
@@ -300,5 +302,7 @@ private:
                                                               nullptr,
                                                               [this] { refreshScreens(); } };
 };
+
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 } // namespace juce
