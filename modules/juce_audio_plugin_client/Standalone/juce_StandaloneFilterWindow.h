@@ -965,7 +965,12 @@ private:
         //==============================================================================
         void inputMutedChanged (bool newInputMutedValue)
         {
+#if GSDSP_HIDE_INPUT_MUTED_NOTIFICATION
+            juce::ignoreUnused (newInputMutedValue);
+            shouldShowNotification = false;
+#else
             shouldShowNotification = newInputMutedValue;
+#endif
             notification.setVisible (shouldShowNotification);
 
            #if JUCE_IOS || JUCE_ANDROID
