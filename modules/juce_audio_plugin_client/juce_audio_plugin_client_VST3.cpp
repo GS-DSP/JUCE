@@ -66,7 +66,7 @@ JUCE_BEGIN_NO_SANITIZE ("vptr")
 // can see whether the plugin's AudioProcessorParameter values reflect the
 // state restored by IComponent::setState.
 #ifndef JUCE_VST3_PLUGIN_STATE_DIAG
- #define JUCE_VST3_PLUGIN_STATE_DIAG 1
+ #define JUCE_VST3_PLUGIN_STATE_DIAG 0
 #endif
 #include <juce_audio_plugin_client/detail/juce_LinuxMessageThread.h>
 #include <juce_audio_plugin_client/detail/juce_VSTWindowUtilities.h>
