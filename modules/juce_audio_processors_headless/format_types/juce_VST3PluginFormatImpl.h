@@ -2844,9 +2844,11 @@ public:
         appendStateFrom (state, holder->component, "IComponent");
         appendStateFrom (state, editController, "IEditController");
 
-        std::fprintf (stderr, "\n[DIAG] getStateInformation: IComponent bytes=%lld IEditController bytes=%lld\n",
-                      (long long) holder->component != nullptr ? state.getChildByName ("IComponent")->getStringAttribute ("size").getLargeIntValue() : -1,
-                      editController != nullptr ? (state.getChildByName ("IEditController") != nullptr ? state.getChildByName ("IEditController")->getStringAttribute ("size").getLargeIntValue() : -1) : -1);
+        std::fprintf (stderr, "\n[DIAG] getStateInformation:\n");
+        if (auto* ic = state.getChildByName ("IComponent"))
+            std::fprintf (stderr, "[DIAG]   IComponent size=%s\n", ic->getStringAttribute ("size").toRawUTF8());
+        if (auto* ec = state.getChildByName ("IEditController"))
+            std::fprintf (stderr, "[DIAG]   IEditController size=%s\n", ec->getStringAttribute ("size").toRawUTF8());
         diagDumpParams ("getStateInformation (after flush)");
 
         AudioProcessor::copyXmlToBinary (state, destData);
