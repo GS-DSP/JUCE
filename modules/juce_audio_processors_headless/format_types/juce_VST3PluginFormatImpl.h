@@ -41,6 +41,7 @@
 #endif
 
 #include <juce_audio_processors_headless/format_types/juce_VST3Headers.h>
+#include <cstdio> // DIAGNOSTIC
 #include <juce_audio_processors_headless/format_types/juce_VST3Utilities.h>
 #include <juce_audio_processors_headless/format_types/juce_VST3Common.h>
 #include <juce_audio_processors_headless/format_types/juce_ARACommon.h>
@@ -2799,6 +2800,33 @@ public:
     }
 
     //==============================================================================
+    //================ DIAGNOSTIC: dump parameter state =======================
+    void diagDumpParams (const char* tag)
+    {
+        std::fprintf (stderr, "\n[DIAG] ===== %s =====\n", tag);
+
+        if (editController == nullptr)
+        {
+            std::fprintf (stderr, "[DIAG]   (no editController)\n");
+            return;
+        }
+
+        int idx = 0;
+        for (auto* parameter : getParameters())
+        {
+            auto* vst3Param = static_cast<VST3Parameter*> (parameter);
+            const auto id = vst3Param->getParamID();
+            const auto cached = parameter->getValue();
+            const auto ecVal = (float) editController->getParamNormalized (id);
+            std::fprintf (stderr,
+                          "[DIAG]   [%d] id=%u '%s' cached=%.6f ec.getParamNormalized=%.6f\n",
+                          idx++, (unsigned int) id,
+                          parameter->getName (512).toRawUTF8(),
+                          (double) cached, (double) ecVal);
+        }
+        std::fflush (stderr);
+    }
+
     void getStateInformation (MemoryBlock& destData) override
     {
         // The VST3 plugin format requires that get/set state calls are made
@@ -2816,6 +2844,11 @@ public:
         appendStateFrom (state, holder->component, "IComponent");
         appendStateFrom (state, editController, "IEditController");
 
+        std::fprintf (stderr, "\n[DIAG] getStateInformation: IComponent bytes=%lld IEditController bytes=%lld\n",
+                      (long long) holder->component != nullptr ? state.getChildByName ("IComponent")->getStringAttribute ("size").getLargeIntValue() : -1,
+                      editController != nullptr ? (state.getChildByName ("IEditController") != nullptr ? state.getChildByName ("IEditController")->getStringAttribute ("size").getLargeIntValue() : -1) : -1);
+        diagDumpParams ("getStateInformation (after flush)");
+
         AudioProcessor::copyXmlToBinary (state, destData);
     }
 
@@ -2831,12 +2864,17 @@ public:
 
         parameterDispatcher.flush();
 
+        diagDumpParams ("setStateInformation (after flush, before restore)");
+
         if (auto head = AudioProcessor::getXmlFromBinary (data, sizeInBytes))
         {
             auto componentStream (createMemoryStreamForState (*head, "IComponent"));
 
             if (componentStream != nullptr && holder->component != nullptr)
-                holder->component->setState (componentStream.get());
+            {
+                const auto r1 = holder->component->setState (componentStream.get());
+                std::fprintf (stderr, "[DIAG] component->setState returned %d\n", (int) r1);
+            }
 
             if (editController != nullptr)
             {
@@ -2846,31 +2884,56 @@ public:
                     componentStream->seek (0, IBStream::kIBSeekSet, &result);
                     setComponentStateAndResetParameters (*componentStream);
                 }
+                else
+                {
+                    std::fprintf (stderr, "[DIAG] no IComponent stream in state\n");
+                }
 
                 auto controllerStream (createMemoryStreamForState (*head, "IEditController"));
 
                 if (controllerStream != nullptr)
-                    editController->setState (controllerStream.get());
+                {
+                    const auto r2 = editController->setState (controllerStream.get());
+                    std::fprintf (stderr, "[DIAG] editController->setState returned %d\n", (int) r2);
+                    diagDumpParams ("after editController->setState");
+                }
+                else
+                {
+                    std::fprintf (stderr, "[DIAG] no IEditController stream in state\n");
+                    diagDumpParams ("after setComponentState (no controller stream)");
+                }
             }
         }
+        else
+        {
+            std::fprintf (stderr, "[DIAG] setStateInformation: failed to parse state XML\n");
+        }
+
+        diagDumpParams ("setStateInformation (final)");
     }
 
     void setComponentStateAndResetParameters (MemoryStream& stream)
     {
         jassert (editController != nullptr);
 
-        warnOnFailureIfImplemented (editController->setComponentState (&stream));
+        const auto r = warnOnFailureIfImplemented (editController->setComponentState (&stream));
+        std::fprintf (stderr, "[DIAG] editController->setComponentState returned %d\n", (int) r);
+        diagDumpParams ("after setComponentState, before resetParameters");
         resetParameters();
     }
 
     void resetParameters()
     {
+        int idx = 0;
         for (auto* parameter : getParameters())
         {
             auto* vst3Param = static_cast<VST3Parameter*> (parameter);
             const auto value = (float) editController->getParamNormalized (vst3Param->getParamID());
+            std::fprintf (stderr, "[DIAG]   resetParameters [%d] id=%u ec=%.6f -> cached\n",
+                          idx++, (unsigned int) vst3Param->getParamID(), (double) value);
             vst3Param->setValueWithoutUpdatingProcessor (value);
         }
+        std::fflush (stderr);
     }
 
     MemoryBlock getPreset() const override
