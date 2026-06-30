@@ -2846,9 +2846,13 @@ public:
 
         std::fprintf (stderr, "\n[DIAG] getStateInformation:\n");
         if (auto* ic = state.getChildByName ("IComponent"))
-            std::fprintf (stderr, "[DIAG]   IComponent size=%s\n", ic->getStringAttribute ("size").toRawUTF8());
+            std::fprintf (stderr, "[DIAG]   IComponent present, base64 len=%d\n", (int) ic->getAllSubText().length());
+        else
+            std::fprintf (stderr, "[DIAG]   IComponent ABSENT\n");
         if (auto* ec = state.getChildByName ("IEditController"))
-            std::fprintf (stderr, "[DIAG]   IEditController size=%s\n", ec->getStringAttribute ("size").toRawUTF8());
+            std::fprintf (stderr, "[DIAG]   IEditController present, base64 len=%d\n", (int) ec->getAllSubText().length());
+        else
+            std::fprintf (stderr, "[DIAG]   IEditController ABSENT\n");
         diagDumpParams ("getStateInformation (after flush)");
 
         AudioProcessor::copyXmlToBinary (state, destData);
@@ -3080,12 +3084,18 @@ private:
             MemoryStream stream;
 
             const auto result = object->getState (&stream);
+            std::fprintf (stderr, "[DIAG] appendStateFrom '%s': getState returned %d, stream size=%lld\n",
+                          identifier.toRawUTF8(), (int) result, (long long) stream.getSize());
 
             if (result == kResultTrue)
             {
                 MemoryBlock info (stream.getData(), (size_t) stream.getSize());
                 head.createNewChildElement (identifier)->addTextElement (info.toBase64Encoding());
             }
+        }
+        else
+        {
+            std::fprintf (stderr, "[DIAG] appendStateFrom '%s': object is null\n", identifier.toRawUTF8());
         }
     }
 
