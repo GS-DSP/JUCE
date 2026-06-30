@@ -58,6 +58,16 @@ JUCE_BEGIN_NO_SANITIZE ("vptr")
 #include <juce_audio_plugin_client/detail/juce_IncludeSystemHeaders.h>
 #include <juce_audio_plugin_client/detail/juce_PluginUtilities.h>
 #include <juce_audio_plugin_client/detail/juce_PluginScaleFactorUtilities.h>
+
+#include <cstdio> // PLUGIN_DIAG
+
+// Toggle plugin-side VST3 state diagnostics. 1 = on, 0 = off.
+// When on, setComponentState logs each parameter's getValue() to stderr so we
+// can see whether the plugin's AudioProcessorParameter values reflect the
+// state restored by IComponent::setState.
+#ifndef JUCE_VST3_PLUGIN_STATE_DIAG
+ #define JUCE_VST3_PLUGIN_STATE_DIAG 0
+#endif
 #include <juce_audio_plugin_client/detail/juce_LinuxMessageThread.h>
 #include <juce_audio_plugin_client/detail/juce_VSTWindowUtilities.h>
 #include <juce_gui_basics/native/juce_WindowsHooks_windows.h>
@@ -1196,6 +1206,10 @@ public:
 
         auto restartFlags = toUnderlyingType (Vst::kParamValuesChanged);
 
+      #if JUCE_VST3_PLUGIN_STATE_DIAG
+        std::fprintf (stderr, "\n[PLUGIN-DIAG] ===== setComponentState =====\n");
+      #endif
+
         if (audioProcessor != nullptr)
         {
             auto* pluginInstance = getPluginInstance();
@@ -1210,6 +1224,16 @@ public:
 
                     return (double) audioProcessor->getParamForVSTParamID (vstParamId)->getValue();
                 });
+
+              #if JUCE_VST3_PLUGIN_STATE_DIAG
+                {
+                    auto* p = audioProcessor->getParamForVSTParamID (vstParamId);
+                    std::fprintf (stderr, "[PLUGIN-DIAG]   id=%u '%s' getValue()=%.6f -> setParamNormalized\n",
+                                  (unsigned int) vstParamId,
+                                  p != nullptr ? p->getName (512).toRawUTF8() : "<null>",
+                                  (double) paramValue);
+                }
+              #endif
 
                 setParamNormalized (vstParamId, paramValue);
             }
