@@ -3,6 +3,36 @@
 This file lists the more notable headline features. For more detailed info
 about changes and bugfixes please see the git log and BREAKING_CHANGES.md.
 
+## Version 9.0.6
+
+  - Updated the bundled AAX SDK to 2.10
+  - Added support for the AAX dynamic scale factor API
+  - Changed DropShadower to use a single window behind its owner
+  - Improved PopupMenu and TreeView accessibility
+  - Fixed File handling of UNC shares and drive-relative Windows paths
+  - Fixed multiple Android font loading and IME issues
+  - Fixed some macOS child window and popup menu ordering issues
+  - Fixed some Windows always-on-top window and plug-in scaling issues
+  - Fixed input-only WASAPI devices receiving no input
+  - Fixed a potential CoreMIDI use after free in plug-ins
+  - Added a custom include path option for the LADSPA host
+
+## Version 9.0.5
+
+  - Fixed some layout issues on the iPhone Duo
+  - Added support for native child windows
+  - Added button roles and explicit primary actions to NativeMessageBox
+  - Added protection against malformed ZIP, XML, JSON, ValueTree and OSC input
+  - Added protection against malformed PNG, GIF, WAV and AIFF files
+  - Updated HarfBuzz to 15.0.0
+  - Improved compatibility with Xcode 27 and iOS 26
+  - Fixed multiple Direct2D rendering issues
+  - Fixed multiple JavascriptEngine crashes
+  - Fixed some VST3 hosting scaling issues
+  - Fixed some WinMM MIDI device issues
+  - Fixed some X11 windowing issues
+  - Updated the Projucer's default Android Gradle and Java versions
+
 ## Version 9.0.4
 
   - Added a MIDI device disconnection listener API
